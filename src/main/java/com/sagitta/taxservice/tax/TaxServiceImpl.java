@@ -9,6 +9,7 @@ import com.sagitta.taxservice.tax.domain.constants.GenderOrAgeCategory;
 import com.sagitta.taxservice.tax.domain.constants.TaxCategory;
 import com.sagitta.taxservice.tax.domain.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
@@ -117,6 +118,12 @@ public class TaxServiceImpl implements TaxService {
         }
         TaxHistoryResponseDto response = new TaxHistoryResponseDto(incomeAndTaxeHistories);
         return response;
+    }
+
+    public ResponseEntity<String> returnTax(TaxReturnRequestDto taxRequestDto) {
+        Tax tax = taxRepository.findByEtinAndYear(taxRequestDto.getEtin(), taxRequestDto.getYear()).get();
+        double taxReturn = tax.getTotalTax() - tax.getTotalTaxPaid();
+        return ResponseEntity.ok().body("Your tax return is " + taxReturn);
     }
 
     private double getTaxAmount(double taxableIncome, HashMap<Double, Double> taxCategories) {
