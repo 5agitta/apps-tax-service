@@ -27,10 +27,10 @@ public class TaxServiceImpl implements TaxService {
 
     private Tax findOrCreateTax(TaxRequestDto taxRequestDTO) {
         return taxRepository.findByEtinAndYear(taxRequestDTO.getETIN(), taxRequestDTO.getYear())
-                .orElseGet(() -> calculateTax(taxRequestDTO));
+                .orElseGet(() -> createAndSaveTax(taxRequestDTO));
     }
 
-    private Tax calculateTax(TaxRequestDto taxRequestDto) {
+    public Tax calculateTax(TaxRequestDto taxRequestDto) {
         double income = taxRequestDto.getIncome();
         int age = taxRequestDto.getAge();
         Gender gender;
@@ -115,7 +115,6 @@ public class TaxServiceImpl implements TaxService {
                 .totalTaxOwed(taxAmount)
                 .cityCharge(cityCharge)
                 .build();
-//        return taxRepository.save(tax);
         return tax;
     }
 
@@ -129,6 +128,12 @@ public class TaxServiceImpl implements TaxService {
         taxResponseDto.setTotalTaxPaid(tax.getTotalTaxPaid());
         taxResponseDto.setTotalTaxOwed(tax.getTotalTaxOwed());
         return taxResponseDto;
+    }
+
+    private Tax createAndSaveTax(TaxRequestDto taxRequestDTO) {
+        Tax tax = calculateTax(taxRequestDTO);
+        taxRepository.save(tax);
+        return tax;
     }
 
 }

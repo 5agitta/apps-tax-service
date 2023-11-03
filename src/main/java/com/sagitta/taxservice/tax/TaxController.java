@@ -1,6 +1,7 @@
 package com.sagitta.taxservice.tax;
 
 import com.sagitta.taxservice.reqres.ApiResponse;
+import com.sagitta.taxservice.tax.domain.Tax;
 import com.sagitta.taxservice.tax.domain.dto.TaxRequestDto;
 import com.sagitta.taxservice.tax.domain.dto.TaxResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,12 @@ public class TaxController {
     @PostMapping ("/yearly")
     public TaxResponseDto getYearlyTax(@RequestBody TaxRequestDto taxRequestDTO) {
         return taxService.getOneYearTaxInfo(taxRequestDTO);
+    }
+
+    @PostMapping("/calculate")
+    public double getTax(@RequestBody TaxRequestDto taxRequestDTO) {
+        Tax tax =  taxService.calculateTax(taxRequestDTO);
+        return tax.getTotalTax();
     }
 
 
