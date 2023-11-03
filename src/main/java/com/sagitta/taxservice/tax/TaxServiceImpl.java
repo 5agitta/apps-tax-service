@@ -120,10 +120,18 @@ public class TaxServiceImpl implements TaxService {
         return response;
     }
 
-    public ResponseEntity<String> returnTax(TaxReturnRequestDto taxRequestDto) {
-        Tax tax = taxRepository.findByEtinAndYear(taxRequestDto.getEtin(), taxRequestDto.getYear()).get();
-        double taxReturn = tax.getTotalTax() - tax.getTotalTaxPaid();
-        return ResponseEntity.ok().body("Your tax return is " + taxReturn);
+    public ResponseEntity<String> payTax(TaxReturnRequestDto taxRequestDto) {
+        Optional<Tax> taxOptional = taxRepository.findByEtinAndYear(taxRequestDto.getEtin(), taxRequestDto.getYear());
+        if(!taxOptional.isPresent())
+            return ResponseEntity.badRequest().body("No tax found for this year!!");
+        Tax tax = taxOptional.get();
+        if(tax.getTotalTaxOwed() < taxRequestDto.getTaxPaid())
+            return ResponseEntity.badRequest().body("You cannot pay more tax than what you owe!!");
+        double taxOwed = tax.getTotalTaxOwed() - taxRequestDto.getTaxPaid();
+        tax.setTotalTaxPaid(tax.getTotalTaxPaid());
+        tax.setTotalTaxOwed(taxOwed);
+        taxRepository.save(tax);
+        return ResponseEntity.ok().body("Your tax due is " + taxOwed);
     }
 
     private double getTaxAmount(double taxableIncome, HashMap<Double, Double> taxCategories) {

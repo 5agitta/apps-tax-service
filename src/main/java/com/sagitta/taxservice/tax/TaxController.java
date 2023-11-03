@@ -1,6 +1,5 @@
 package com.sagitta.taxservice.tax;
 
-import com.sagitta.taxservice.reqres.ApiResponse;
 import com.sagitta.taxservice.tax.domain.Tax;
 import com.sagitta.taxservice.tax.domain.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +35,11 @@ public class TaxController {
         return taxService.getTaxHistory(etin);
     }
 
-    @PostMapping("/return")
+    @PostMapping("/pay")
     @ResponseBody
     public ResponseEntity<String> returnTax(@RequestBody TaxReturnRequestDto taxRequestDto) {
-        Tax tax = taxService.calculateTax(taxRequestDto);
-        return ResponseEntity.ok().body("Your tax return is " + tax.getTotalTax());
+        ResponseEntity<String> response = taxService.payTax(taxRequestDto);
+        return response;
     }
 
 

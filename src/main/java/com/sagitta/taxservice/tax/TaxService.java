@@ -15,5 +15,5 @@ public interface TaxService {
     RecentYearsSummaryResponseDto getRecentYearsSummary(RecentYearsSummaryRequestDto taxRequestDTO);
 
     TaxHistoryResponseDto getTaxHistory(String etin);
-    ResponseEntity<String> returnTax(TaxReturnRequestDto taxRequestDto);
+    ResponseEntity<String> payTax(TaxReturnRequestDto taxRequestDto);
 }

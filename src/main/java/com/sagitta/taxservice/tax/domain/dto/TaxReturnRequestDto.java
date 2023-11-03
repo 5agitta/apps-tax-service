@@ -6,6 +6,5 @@ import lombok.Data;
 public class TaxReturnRequestDto {
     private String etin;
     private int year;
-    private double income;
     private double taxPaid;
 }
