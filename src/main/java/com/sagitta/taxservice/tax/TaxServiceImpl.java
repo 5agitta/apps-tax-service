@@ -27,20 +27,20 @@ public class TaxServiceImpl implements TaxService {
 
     private Tax findOrCreateTax(TaxRequestDto taxRequestDTO) {
         return taxRepository.findByEtinAndYear(taxRequestDTO.getETIN(), taxRequestDTO.getYear())
-                .orElseGet(() -> calculateTax(taxRequestDTO));
+                .orElseGet(() -> createAndSaveTax(taxRequestDTO));
     }
 
-    private Tax calculateTax(TaxRequestDto taxRequestDto) {
+    public Tax calculateTax(TaxRequestDto taxRequestDto) {
         double income = taxRequestDto.getIncome();
         int age = taxRequestDto.getAge();
         Gender gender;
-        if(taxRequestDto.getGender().equals(Gender.MALE))
+        if(taxRequestDto.getGender().equals(Gender.MALE.getGender()))
             gender = Gender.MALE;
         else gender = Gender.FEMALE;
         CityCategory city;
-        if(taxRequestDto.getCity().equals(CityCategory.DHAKA_OR_CHITTAGONG))
+        if(taxRequestDto.getCity().equals(CityCategory.DHAKA_OR_CHITTAGONG.getName()))
             city = CityCategory.DHAKA_OR_CHITTAGONG;
-        else if(taxRequestDto.getCity().equals(CityCategory.OTHER_CITY))
+        else if(taxRequestDto.getCity().equals(CityCategory.OTHER_CITY.getName()))
             city = CityCategory.OTHER_CITY;
         else city = CityCategory.NON_CITY;
         double threshold = 0;
@@ -56,7 +56,7 @@ public class TaxServiceImpl implements TaxService {
             taxCategories = getTaxCategoriesForFemaleOrSenior();
         }
         if (income <= threshold) return createTax(taxRequestDto, 0, city.getCityCharge());
-        double taxAmount = getTaxAmount(income - threshold, getTaxCategoriesForMale());
+        double taxAmount = getTaxAmount(income - threshold, taxCategories);
         if(taxAmount < city.getCityCharge())
             taxAmount = city.getCityCharge();
         return createTax(taxRequestDto, taxAmount, city.getCityCharge());
@@ -115,7 +115,6 @@ public class TaxServiceImpl implements TaxService {
                 .totalTaxOwed(taxAmount)
                 .cityCharge(cityCharge)
                 .build();
-//        return taxRepository.save(tax);
         return tax;
     }
 
@@ -129,6 +128,12 @@ public class TaxServiceImpl implements TaxService {
         taxResponseDto.setTotalTaxPaid(tax.getTotalTaxPaid());
         taxResponseDto.setTotalTaxOwed(tax.getTotalTaxOwed());
         return taxResponseDto;
+    }
+
+    private Tax createAndSaveTax(TaxRequestDto taxRequestDTO) {
+        Tax tax = calculateTax(taxRequestDTO);
+        taxRepository.save(tax);
+        return tax;
     }
 
 }

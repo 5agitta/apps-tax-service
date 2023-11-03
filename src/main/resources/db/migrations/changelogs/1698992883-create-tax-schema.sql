@@ -1,7 +1,7 @@
 -- liquibase formatted sql
 --- SELECT EXTRACT(EPOCH FROM NOW());
 -- changeset Abbiirr:1698992883-1
-
+drop table if exists tax.tax;
 CREATE TABLE tax.tax (
     tax_id VARCHAR(255) PRIMARY KEY,
     eTIN VARCHAR(255),
