@@ -134,7 +134,7 @@ public class TaxServiceImpl implements TaxService {
         return ResponseEntity.ok().body("Your tax due is " + taxOwed);
     }
 
-    private double getTaxAmount(double taxableIncome, HashMap<Double, Double> taxCategories) {
+    public double getTaxAmount(double taxableIncome, HashMap<Double, Double> taxCategories) {
         double tax = 0;
 
         for (Double threshold : taxCategories.keySet()) {
