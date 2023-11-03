@@ -2,13 +2,12 @@ package com.sagitta.taxservice.tax;
 
 import com.sagitta.taxservice.reqres.ApiResponse;
 import com.sagitta.taxservice.tax.domain.Tax;
+import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryRequestDto;
+import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryResponseDto;
 import com.sagitta.taxservice.tax.domain.dto.TaxRequestDto;
 import com.sagitta.taxservice.tax.domain.dto.TaxResponseDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
@@ -25,6 +24,12 @@ public class TaxController {
     public double getTax(@RequestBody TaxRequestDto taxRequestDTO) {
         Tax tax =  taxService.calculateTax(taxRequestDTO);
         return tax.getTotalTax();
+    }
+
+    @PostMapping("/recent")
+    @ResponseBody
+    public RecentYearsSummaryResponseDto getRecentYearsSummary(@RequestBody RecentYearsSummaryRequestDto recentYearsSummaryRequestDto) {
+        return taxService.getRecentYearsSummary(recentYearsSummaryRequestDto);
     }
 
 

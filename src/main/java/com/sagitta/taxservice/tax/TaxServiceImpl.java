@@ -5,12 +5,16 @@ import com.sagitta.taxservice.tax.domain.constants.CityCategory;
 import com.sagitta.taxservice.tax.domain.constants.Gender;
 import com.sagitta.taxservice.tax.domain.constants.GenderOrAgeCategory;
 import com.sagitta.taxservice.tax.domain.constants.TaxCategory;
+import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryRequestDto;
+import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryResponseDto;
 import com.sagitta.taxservice.tax.domain.dto.TaxRequestDto;
 import com.sagitta.taxservice.tax.domain.dto.TaxResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Year;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -34,34 +38,55 @@ public class TaxServiceImpl implements TaxService {
         double income = taxRequestDto.getIncome();
         int age = taxRequestDto.getAge();
         Gender gender;
-        if(taxRequestDto.getGender().equals(Gender.MALE.getGender()))
+        if (taxRequestDto.getGender().equals(Gender.MALE.getGender()))
             gender = Gender.MALE;
         else gender = Gender.FEMALE;
         CityCategory city;
-        if(taxRequestDto.getCity().equals(CityCategory.DHAKA_OR_CHITTAGONG.getName()))
+        if (taxRequestDto.getCity().equals(CityCategory.DHAKA_OR_CHITTAGONG.getName()))
             city = CityCategory.DHAKA_OR_CHITTAGONG;
-        else if(taxRequestDto.getCity().equals(CityCategory.OTHER_CITY.getName()))
+        else if (taxRequestDto.getCity().equals(CityCategory.OTHER_CITY.getName()))
             city = CityCategory.OTHER_CITY;
         else city = CityCategory.NON_CITY;
         double threshold = 0;
         HashMap<Double, Double> taxCategories;
-        if (age <= 60 && gender != Gender.FEMALE)
-        {
+        if (age <= 60 && gender != Gender.FEMALE) {
             threshold = GenderOrAgeCategory.MALE_UNDER_60.getTheshold();
             taxCategories = getTaxCategoriesForMale();
-        }
-
-        else {
+        } else {
             threshold = GenderOrAgeCategory.FEMALE_OR_OVER_60.getTheshold();
             taxCategories = getTaxCategoriesForFemaleOrSenior();
         }
         if (income <= threshold) return createTax(taxRequestDto, 0, city.getCityCharge());
         double taxAmount = getTaxAmount(income - threshold, taxCategories);
-        if(taxAmount < city.getCityCharge())
+        if (taxAmount < city.getCityCharge())
             taxAmount = city.getCityCharge();
         return createTax(taxRequestDto, taxAmount, city.getCityCharge());
 
 
+    }
+
+    @Override
+    public RecentYearsSummaryResponseDto getRecentYearsSummary(RecentYearsSummaryRequestDto taxRequestDTO) {
+        HashMap<Integer, HashMap<Double, Double>> incomeTaxMap = new HashMap<>();
+        int currentYear = Year.now().getValue();
+
+        for (int i = 0; i < 5; i++) {
+            int yearToCheck = currentYear - i;
+            Optional<Tax> tax = taxRepository.findByEtinAndYear(taxRequestDTO.getEtin(), yearToCheck);
+
+            if (tax.isPresent()) {
+                incomeTaxMap.put(yearToCheck, new HashMap<Double, Double>() {{
+                    put(tax.get().getTotalIncome(), tax.get().getTotalTax());
+                }});
+            }
+            else {
+                incomeTaxMap.put(yearToCheck, new HashMap<Double, Double>() {{
+                    put(0.0, 0.0);
+                }});
+            }
+        }
+        RecentYearsSummaryResponseDto response = new RecentYearsSummaryResponseDto(incomeTaxMap);
+        return response;
     }
 
     private double getTaxAmount(double taxableIncome, HashMap<Double, Double> taxCategories) {
