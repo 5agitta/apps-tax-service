@@ -1,15 +1,13 @@
 package com.sagitta.taxservice.tax;
 
 import com.sagitta.taxservice.tax.domain.IncomeAndTax;
+import com.sagitta.taxservice.tax.domain.IncomeTaxHistory;
 import com.sagitta.taxservice.tax.domain.Tax;
 import com.sagitta.taxservice.tax.domain.constants.CityCategory;
 import com.sagitta.taxservice.tax.domain.constants.Gender;
 import com.sagitta.taxservice.tax.domain.constants.GenderOrAgeCategory;
 import com.sagitta.taxservice.tax.domain.constants.TaxCategory;
-import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryRequestDto;
-import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryResponseDto;
-import com.sagitta.taxservice.tax.domain.dto.TaxRequestDto;
-import com.sagitta.taxservice.tax.domain.dto.TaxResponseDto;
+import com.sagitta.taxservice.tax.domain.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -88,6 +86,36 @@ public class TaxServiceImpl implements TaxService {
             }
         }
         RecentYearsSummaryResponseDto response = new RecentYearsSummaryResponseDto(incomeAndTaxes);
+        return response;
+    }
+
+    public TaxHistoryResponseDto getTaxHistory(String etin) {
+        List<IncomeTaxHistory> incomeAndTaxeHistories = new ArrayList<>();
+
+        int currentYear = Year.now().getValue();
+
+        for (int i = 0; i < 5; i++) {
+            int yearToCheck = currentYear - i;
+            Optional<Tax> tax = taxRepository.findByEtinAndYear(etin, yearToCheck);
+            IncomeTaxHistory incomeTaxHistory = new IncomeTaxHistory();
+            if (tax.isPresent()) {
+                incomeTaxHistory.setYear(yearToCheck);
+                incomeTaxHistory.setIncome(tax.get().getTotalIncome());
+                incomeTaxHistory.setTax(tax.get().getTotalTax());
+                incomeTaxHistory.setTaxPaid(tax.get().getTotalTaxPaid());
+                incomeTaxHistory.setTaxOwed(tax.get().getTotalTaxOwed());
+                incomeAndTaxeHistories.add(incomeTaxHistory);
+            }
+            else {
+                incomeTaxHistory.setYear(yearToCheck);
+                incomeTaxHistory.setIncome(0.0);
+                incomeTaxHistory.setTax(0.0);
+                incomeTaxHistory.setTaxPaid(0.0);
+                incomeTaxHistory.setTaxOwed(0.0);
+                incomeAndTaxeHistories.add(incomeTaxHistory);
+            }
+        }
+        TaxHistoryResponseDto response = new TaxHistoryResponseDto(incomeAndTaxeHistories);
         return response;
     }
 
