@@ -1,5 +1,6 @@
 package com.sagitta.taxservice.tax;
 
+import com.sagitta.taxservice.tax.domain.IncomeAndTax;
 import com.sagitta.taxservice.tax.domain.Tax;
 import com.sagitta.taxservice.tax.domain.constants.CityCategory;
 import com.sagitta.taxservice.tax.domain.constants.Gender;
@@ -13,9 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -67,25 +66,28 @@ public class TaxServiceImpl implements TaxService {
 
     @Override
     public RecentYearsSummaryResponseDto getRecentYearsSummary(RecentYearsSummaryRequestDto taxRequestDTO) {
-        HashMap<Integer, HashMap<Double, Double>> incomeTaxMap = new HashMap<>();
+        List<IncomeAndTax> incomeAndTaxes = new ArrayList<>();
+
         int currentYear = Year.now().getValue();
 
         for (int i = 0; i < 5; i++) {
             int yearToCheck = currentYear - i;
             Optional<Tax> tax = taxRepository.findByEtinAndYear(taxRequestDTO.getEtin(), yearToCheck);
-
+            IncomeAndTax incomeAndTax = new IncomeAndTax();
             if (tax.isPresent()) {
-                incomeTaxMap.put(yearToCheck, new HashMap<Double, Double>() {{
-                    put(tax.get().getTotalIncome(), tax.get().getTotalTax());
-                }});
+                incomeAndTax.setYear(yearToCheck);
+                incomeAndTax.setIncome(tax.get().getTotalIncome());
+                incomeAndTax.setTax(tax.get().getTotalTax());
+                incomeAndTaxes.add(incomeAndTax);
             }
             else {
-                incomeTaxMap.put(yearToCheck, new HashMap<Double, Double>() {{
-                    put(0.0, 0.0);
-                }});
+                incomeAndTax.setYear(yearToCheck);
+                incomeAndTax.setIncome(0.0);
+                incomeAndTax.setTax(0.0);
+                incomeAndTaxes.add(incomeAndTax);
             }
         }
-        RecentYearsSummaryResponseDto response = new RecentYearsSummaryResponseDto(incomeTaxMap);
+        RecentYearsSummaryResponseDto response = new RecentYearsSummaryResponseDto(incomeAndTaxes);
         return response;
     }
 
