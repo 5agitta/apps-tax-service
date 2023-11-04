@@ -31,8 +31,8 @@ public class TaxController {
 
     @PostMapping("/history")
     @ResponseBody
-    public TaxHistoryResponseDto getTaxHistory(@RequestBody String etin) {
-        return taxService.getTaxHistory(etin);
+    public TaxHistoryResponseDto getTaxHistory(@RequestBody TaxHistoryRequestDto taxHistoryRequestDto) {
+        return taxService.getTaxHistory(taxHistoryRequestDto.getEtin());
     }
 
     @PostMapping("/pay")
