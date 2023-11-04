@@ -31,6 +31,8 @@ pipeline {
                         returnStdout: true,
                     )
 
+                    sh "trivy image $username/$projectName:$version"
+
                     // Push the Docker image to the registry
                     sh "docker push $username/$projectName:$version"
                 }
