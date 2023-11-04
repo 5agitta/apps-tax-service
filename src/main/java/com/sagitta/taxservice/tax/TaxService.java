@@ -2,10 +2,8 @@ package com.sagitta.taxservice.tax;
 
 
 import com.sagitta.taxservice.tax.domain.Tax;
-import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryRequestDto;
-import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryResponseDto;
-import com.sagitta.taxservice.tax.domain.dto.TaxRequestDto;
-import com.sagitta.taxservice.tax.domain.dto.TaxResponseDto;
+import com.sagitta.taxservice.tax.domain.dto.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,4 +13,7 @@ public interface TaxService {
     Tax calculateTax(TaxRequestDto taxRequestDTO);
 
     RecentYearsSummaryResponseDto getRecentYearsSummary(RecentYearsSummaryRequestDto taxRequestDTO);
+
+    TaxHistoryResponseDto getTaxHistory(String etin);
+    ResponseEntity<String> payTax(TaxReturnRequestDto taxRequestDto);
 }

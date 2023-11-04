@@ -1,21 +1,19 @@
 package com.sagitta.taxservice.tax;
 
+import com.sagitta.taxservice.tax.domain.IncomeAndTax;
+import com.sagitta.taxservice.tax.domain.IncomeTaxHistory;
 import com.sagitta.taxservice.tax.domain.Tax;
 import com.sagitta.taxservice.tax.domain.constants.CityCategory;
 import com.sagitta.taxservice.tax.domain.constants.Gender;
 import com.sagitta.taxservice.tax.domain.constants.GenderOrAgeCategory;
 import com.sagitta.taxservice.tax.domain.constants.TaxCategory;
-import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryRequestDto;
-import com.sagitta.taxservice.tax.domain.dto.RecentYearsSummaryResponseDto;
-import com.sagitta.taxservice.tax.domain.dto.TaxRequestDto;
-import com.sagitta.taxservice.tax.domain.dto.TaxResponseDto;
+import com.sagitta.taxservice.tax.domain.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -67,29 +65,76 @@ public class TaxServiceImpl implements TaxService {
 
     @Override
     public RecentYearsSummaryResponseDto getRecentYearsSummary(RecentYearsSummaryRequestDto taxRequestDTO) {
-        HashMap<Integer, HashMap<Double, Double>> incomeTaxMap = new HashMap<>();
+        List<IncomeAndTax> incomeAndTaxes = new ArrayList<>();
+
         int currentYear = Year.now().getValue();
 
         for (int i = 0; i < 5; i++) {
             int yearToCheck = currentYear - i;
             Optional<Tax> tax = taxRepository.findByEtinAndYear(taxRequestDTO.getEtin(), yearToCheck);
-
+            IncomeAndTax incomeAndTax = new IncomeAndTax();
             if (tax.isPresent()) {
-                incomeTaxMap.put(yearToCheck, new HashMap<Double, Double>() {{
-                    put(tax.get().getTotalIncome(), tax.get().getTotalTax());
-                }});
+                incomeAndTax.setYear(yearToCheck);
+                incomeAndTax.setIncome(tax.get().getTotalIncome());
+                incomeAndTax.setTax(tax.get().getTotalTax());
+                incomeAndTaxes.add(incomeAndTax);
             }
             else {
-                incomeTaxMap.put(yearToCheck, new HashMap<Double, Double>() {{
-                    put(0.0, 0.0);
-                }});
+                incomeAndTax.setYear(yearToCheck);
+                incomeAndTax.setIncome(0.0);
+                incomeAndTax.setTax(0.0);
+                incomeAndTaxes.add(incomeAndTax);
             }
         }
-        RecentYearsSummaryResponseDto response = new RecentYearsSummaryResponseDto(incomeTaxMap);
+        RecentYearsSummaryResponseDto response = new RecentYearsSummaryResponseDto(incomeAndTaxes);
         return response;
     }
 
-    private double getTaxAmount(double taxableIncome, HashMap<Double, Double> taxCategories) {
+    public TaxHistoryResponseDto getTaxHistory(String etin) {
+        List<IncomeTaxHistory> incomeAndTaxeHistories = new ArrayList<>();
+
+        int currentYear = Year.now().getValue();
+
+        for (int i = 0; i < 5; i++) {
+            int yearToCheck = currentYear - i;
+            Optional<Tax> tax = taxRepository.findByEtinAndYear(etin, yearToCheck);
+            IncomeTaxHistory incomeTaxHistory = new IncomeTaxHistory();
+            if (tax.isPresent()) {
+                incomeTaxHistory.setYear(yearToCheck);
+                incomeTaxHistory.setIncome(tax.get().getTotalIncome());
+                incomeTaxHistory.setTax(tax.get().getTotalTax());
+                incomeTaxHistory.setTaxPaid(tax.get().getTotalTaxPaid());
+                incomeTaxHistory.setTaxOwed(tax.get().getTotalTaxOwed());
+                incomeAndTaxeHistories.add(incomeTaxHistory);
+            }
+            else {
+                incomeTaxHistory.setYear(yearToCheck);
+                incomeTaxHistory.setIncome(0.0);
+                incomeTaxHistory.setTax(0.0);
+                incomeTaxHistory.setTaxPaid(0.0);
+                incomeTaxHistory.setTaxOwed(0.0);
+                incomeAndTaxeHistories.add(incomeTaxHistory);
+            }
+        }
+        TaxHistoryResponseDto response = new TaxHistoryResponseDto(incomeAndTaxeHistories);
+        return response;
+    }
+
+    public ResponseEntity<String> payTax(TaxReturnRequestDto taxRequestDto) {
+        Optional<Tax> taxOptional = taxRepository.findByEtinAndYear(taxRequestDto.getEtin(), taxRequestDto.getYear());
+        if(!taxOptional.isPresent())
+            return ResponseEntity.badRequest().body("No tax found for this year!!");
+        Tax tax = taxOptional.get();
+        if(tax.getTotalTaxOwed() < taxRequestDto.getTaxPaid())
+            return ResponseEntity.badRequest().body("You cannot pay more tax than what you owe!!");
+        double taxOwed = tax.getTotalTaxOwed() - taxRequestDto.getTaxPaid();
+        tax.setTotalTaxPaid(tax.getTotalTaxPaid());
+        tax.setTotalTaxOwed(taxOwed);
+        taxRepository.save(tax);
+        return ResponseEntity.ok().body("Your tax due is " + taxOwed);
+    }
+
+    public double getTaxAmount(double taxableIncome, HashMap<Double, Double> taxCategories) {
         double tax = 0;
 
         for (Double threshold : taxCategories.keySet()) {

@@ -1,4 +1,4 @@
-package com.sagitta.taxservice.tax.domain;
+package com.sagitta.taxservice.tax.serializers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
